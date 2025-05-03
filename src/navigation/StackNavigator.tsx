@@ -1,13 +1,20 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from '@/screens/Stack/Home'; 
 
 
+// Any listeners or references to the navigation context should be defined here
 function NavigationContent() { 
+
+  // Navigation references used to navigate from outside of the navigation context
+  const navigationRef = React.useRef<NavigationContainerRef<any>>(null);
+
   return (
     <React.Fragment>
-      <NavigationContainer>
+      <NavigationContainer
+        ref={navigationRef}
+      >
         <MainNavigator />
       </NavigationContainer>
     </React.Fragment>
@@ -29,6 +36,7 @@ function MainNavigator() {
   );
 }
 
+// Any context providers should be defined here
 export default function Navigation() {
   return (
     <NavigationContent />
