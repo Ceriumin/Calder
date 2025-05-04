@@ -1,6 +1,8 @@
 import React from 'react';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Provider } from 'react-redux';
+import { store } from '@/store/store'; // Import your Redux store
 
 import TabNavigator from './TabNavigator';
 
@@ -40,6 +42,8 @@ function MainNavigator() {
 // Any context providers should be defined here
 export default function Navigation() {
   return (
-    <NavigationContent />
+    <Provider store={store}>
+        <NavigationContent />
+    </Provider>
   );
 }
