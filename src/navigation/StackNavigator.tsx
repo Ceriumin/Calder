@@ -3,8 +3,8 @@ import { NavigationContainer, NavigationContainerRef } from '@react-navigation/n
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Provider } from 'react-redux';
 import { store } from '@/store/store'; // Import your Redux store
-import Home from '@/screens/Stack/Home'; 
 
+import TabNavigator from './TabNavigator';
 
 // Any listeners or references to the navigation context should be defined here
 function NavigationContent() { 
@@ -30,10 +30,11 @@ function MainNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen
-        name="Home"
-        component={Home}
-        options={{ headerShown: true }}
+        name="Main"
+        component={TabNavigator}
+        options={{ headerShown: false }}
       />
+      {/* Add more screens here */}
     </Stack.Navigator>
   );
 }
