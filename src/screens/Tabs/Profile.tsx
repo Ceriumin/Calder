@@ -1,10 +1,10 @@
 import React from 'react';
 import { View } from 'react-native';
 
-export default function Home() {
+export default function Profile() {
   return (
     <View>
-      {/* Add your home screen content here */}
-    </View>
+      {/* Content Placeholder */}
+      </View>
   );
 }

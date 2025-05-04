@@ -1,8 +1,8 @@
 import React from 'react';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Home from '@/screens/Stack/Home'; 
 
+import TabNavigator from './TabNavigator';
 
 // Any listeners or references to the navigation context should be defined here
 function NavigationContent() { 
@@ -28,10 +28,11 @@ function MainNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen
-        name="Home"
-        component={Home}
-        options={{ headerShown: true }}
+        name="Main"
+        component={TabNavigator}
+        options={{ headerShown: false }}
       />
+      {/* Add more screens here */}
     </Stack.Navigator>
   );
 }
