@@ -2,9 +2,8 @@ import React from 'react';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Provider } from 'react-redux';
-import { store, persistor } from '@/store/store'; // Import your Redux store
+import { store } from '@/store/store'; // Import your Redux store
 import Home from '@/screens/Stack/Home'; 
-import { PersistGate } from 'redux-persist/integration/react';
 
 
 // Any listeners or references to the navigation context should be defined here
