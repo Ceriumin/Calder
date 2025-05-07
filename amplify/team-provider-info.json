@@ -1,0 +1,15 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-calder-dev-79cd6-authRole",
+      "UnauthRoleArn": "arn:aws:iam::864981728637:role/amplify-calder-dev-79cd6-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::864981728637:role/amplify-calder-dev-79cd6-authRole",
+      "Region": "eu-west-2",
+      "DeploymentBucketName": "amplify-calder-dev-79cd6-deployment",
+      "UnauthRoleName": "amplify-calder-dev-79cd6-unauthRole",
+      "StackName": "amplify-calder-dev-79cd6",
+      "StackId": "arn:aws:cloudformation:eu-west-2:864981728637:stack/amplify-calder-dev-79cd6/9abe0830-2b3d-11f0-8140-063bbb94fa2b",
+      "AmplifyAppId": "d19fif8qwk6419"
+    }
+  }
+}
