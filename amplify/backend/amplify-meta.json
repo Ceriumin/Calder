@@ -43,7 +43,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-calder-dev-79cd6-deployment/amplify-cfn-templates/auth/calder9b661702-cloudformation-template.json",
         "logicalId": "authcalder9b661702"
       },
-      "lastPushTimeStamp": "2025-05-07T16:58:20.441Z",
+      "lastPushTimeStamp": "2025-05-07T22:04:16.840Z",
       "output": {
         "UserPoolId": "eu-west-2_P9EJNyIqJ",
         "AppClientIDWeb": "67s8dj6aifjsuih46erfd8a25f",
