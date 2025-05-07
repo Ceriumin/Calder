@@ -10,6 +10,11 @@
       "StackName": "amplify-calder-dev-79cd6",
       "StackId": "arn:aws:cloudformation:eu-west-2:864981728637:stack/amplify-calder-dev-79cd6/9abe0830-2b3d-11f0-8140-063bbb94fa2b",
       "AmplifyAppId": "d19fif8qwk6419"
+    },
+    "categories": {
+      "auth": {
+        "calder9b661702": {}
+      }
     }
   }
 }
