@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { darkTheme, lightTheme } from '@constants/ThemeColours';
+import { RootState } from '../store';
 
 export type ThemeMode = 'light' | 'dark';
 export type Theme = typeof darkTheme | typeof lightTheme;
@@ -45,14 +46,12 @@ const themeSlice = createSlice({
   },
 });
 
-// Export actions
 export const { setThemeMode, toggleTheme, useSystemTheme } = themeSlice.actions;
 
-/* 
+
 export const selectThemeMode = (state: RootState) => state.theme.mode;
 export const selectIsSystemPreference = (state: RootState) => state.theme.isSystemPreference;
 export const selectCurrentTheme = (state: RootState) => state.theme.currentTheme;
-*/
 
 // Export reducer
 export default themeSlice.reducer;

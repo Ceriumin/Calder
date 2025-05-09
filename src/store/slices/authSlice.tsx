@@ -18,7 +18,7 @@ export const initialState: AuthState = {
 
 export const checkAuthState = createAsyncThunk(
   'auth/checkAuthState',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => { // Placeholder for the thunk API
     try {
       const user = await getCurrentUser();
       const userAttributes = await fetchUserAttributes();
@@ -60,7 +60,7 @@ export const signInUser = createAsyncThunk(
   async (credentials: { username: string; password: string }, { rejectWithValue }) => {
     try {
       const { username, password } = credentials;
-      const user = await signIn({ username, password });
+      const user = await signIn({ username, password});
       const userAttributes = await fetchUserAttributes();
       return { ...user, attributes: userAttributes };
     } catch (error) {

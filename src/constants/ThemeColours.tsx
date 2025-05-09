@@ -7,7 +7,7 @@ export interface AppTheme {
     background: string
     text?: string
   }
-  font: string // Add this line for a singular font variable
+  font: string 
 }
 
 export const darkTheme: AppTheme = {
@@ -19,7 +19,7 @@ export const darkTheme: AppTheme = {
     background: '#121212',
     text: '#FFFFFF',
   },
-  font: 'Roboto' // Default font for dark theme
+  font: 'Roboto'
 }
 
 export const lightTheme: AppTheme = {
@@ -31,5 +31,5 @@ export const lightTheme: AppTheme = {
     background: '#F5F5F5',
     text: '#000000',
   },
-  font: 'Roboto' // Default font for light theme
+  font: 'Roboto' 
 }

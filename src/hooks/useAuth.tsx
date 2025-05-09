@@ -3,10 +3,10 @@ import { signInUser, signUpUser, signOutUser, clearError, checkAuthState, confir
 import { useEffect, useState } from 'react';
 
 export const useAuth = () => {
+
   const dispatch = useDispatch();
   const { isAuthenticated, user, error, isLoading } = useAppSelector(state => state.auth);
 
-    // Local loading states for specific actions
     const [isSigningIn, setIsSigningIn] = useState(false);
     const [isSigningUp, setIsSigningUp] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
@@ -18,7 +18,7 @@ export const useAuth = () => {
 
     const signIn = async (username: string, password: string) => {
         setIsSigningIn(true);
-        try {
+        try { // Unwrap allows to handle the result of the thunk action
             await dispatch(signInUser({ username, password })).unwrap();
         } catch (error) {
             console.error('Error signing in:', error);
@@ -60,9 +60,12 @@ export const useAuth = () => {
         }
     }
 
+    // Clears the error state in the auth slice
+    // This is useful to reset the error state after an error has been handled
+    // and the user is ready to try again
     const clearErrorState = () => {
         dispatch(clearError());
-    }
+    } 
 
     return {
         isAuthenticated,
