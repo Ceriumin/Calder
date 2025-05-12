@@ -1,24 +1,26 @@
 import { Platform, PermissionsAndroid } from 'react-native';
 import { BleManager, Device, State as BLEState } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
-import { connected } from 'process';
 
 class BluetoothService {
     manager: BleManager;
     deviceMap: Map<string, Device>;
+    isInitialized: boolean = false;
 
     constructor() {
         this.manager = new BleManager();
         this.deviceMap = new Map();
+        this.isInitialized = true;
     }
 
     async requestPermissions() {
-        if( Platform.OS === 'ios') { //iOS 13+ handles permissions automatically
+        if (Platform.OS === 'ios') {
             return true;
         }
 
         if (Platform.OS === 'android') {
-            const granted = await PermissionsAndroid.request(
+            // Request both scan and connect permissions
+            const scanGranted = await PermissionsAndroid.request(
                 PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
                 {
                     title: 'Bluetooth Scan Permission',
@@ -28,29 +30,52 @@ class BluetoothService {
                     buttonPositive: 'OK',
                 }
             );
+            
+            const connectGranted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+                {
+                    title: 'Bluetooth Connect Permission',
+                    message: 'This app needs access to your Bluetooth to connect to devices.',
+                    buttonNeutral: 'Ask Me Later',
+                    buttonNegative: 'Cancel',
+                    buttonPositive: 'OK',
+                }
+            );
 
-            if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-                console.warn('Bluetooth scan permission denied');
-            }
+            return scanGranted === PermissionsAndroid.RESULTS.GRANTED && 
+                   connectGranted === PermissionsAndroid.RESULTS.GRANTED;
+        }
+        
+        return false;
+    }
+
+    // Initialize BLE manager if it was destroyed
+    async initialize() {
+        if (!this.isInitialized) {
+            this.manager = new BleManager();
+            this.isInitialized = true;
         }
     }
 
     async startScan(onDeviceFound: (device: Device) => void) {
+        await this.initialize();
+        
         const state = await this.manager.state();
 
         if (state !== BLEState.PoweredOn) {
-            console.warn('Bluetooth is not powered on');
-            return;
+            throw new Error('Bluetooth is not powered on');
         }
 
         const hasPermission = await this.requestPermissions();
         if (!hasPermission) {
-            console.warn('Bluetooth permission not granted');
-            return;
+            throw new Error('Bluetooth permission not granted');
         }
 
+        // Clear the device map before starting a new scan
+        this.deviceMap.clear();
+        
         // Stops scanning if start scan is called
-        this.manager.stopDeviceScan();
+        this.stopScan();
 
         this.manager.startDeviceScan(
             null,
@@ -61,7 +86,7 @@ class BluetoothService {
                     return;
                 }
 
-                if (device && !this.deviceMap.has(device.id)) {
+                if (device && device.name) {  // Only consider devices with names
                     this.deviceMap.set(device.id, device);
                     onDeviceFound(device);
                 }
@@ -69,24 +94,34 @@ class BluetoothService {
         );
     }
 
-    async stopScan() {
-        this.manager.stopDeviceScan();
+    stopScan() {
+        if (this.isInitialized) {
+            this.manager.stopDeviceScan();
+        }
     }
 
     async connectToDevice(deviceID: string): Promise<Device | null> {
+        await this.initialize();
+        
         const device = this.deviceMap.get(deviceID);
 
         if (!device) {
-            console.warn(`Device with ID ${deviceID} not found`);
-            return null;
+            throw new Error(`Device with ID ${deviceID} not found`);
         }
 
-        const connectedDevice = await device.connect();
-        await connectedDevice.discoverAllServicesAndCharacteristics();
-        return connectedDevice;
+        try {
+            const connectedDevice = await device.connect({ autoConnect: true });
+            await connectedDevice.discoverAllServicesAndCharacteristics();
+            return connectedDevice;
+        } catch (error) {
+            console.error('Connection error:', error);
+            throw error;
+        }
     }
 
     async disconnectFromDevice(deviceID: string) {
+        if (!this.isInitialized) return;
+        
         const device = this.deviceMap.get(deviceID);
 
         if (!device) {
@@ -94,33 +129,40 @@ class BluetoothService {
             return;
         }
 
-        await device.cancelConnection();
+        try {
+            await device.cancelConnection();
+        } catch (error) {
+            console.error('Disconnection error:', error);
+        }
     }
 
     async readCharacteristic(
         deviceID: string, 
         serviceUUID: string, 
         characteristicUUID: string
-    ): 
-    Promise<Buffer | null> {
+    ): Promise<Buffer | null> {
+        await this.initialize();
+        
         const device = this.deviceMap.get(deviceID);
         
         if(!device) {
-            console.warn(`Device with ID ${deviceID} not found`);
+            throw new Error(`Device with ID ${deviceID} not found`);
+        }
+
+        try {
+            const characteristic = await device.readCharacteristicForService(
+                serviceUUID,
+                characteristicUUID
+            );
+
+            if(characteristic.value) {
+                return Buffer.from(characteristic.value, 'base64');
+            }
             return null;
+        } catch (error) {
+            console.error('Read characteristic error:', error);
+            throw error;
         }
-
-        const characteristic = await device.readCharacteristicForService(
-            serviceUUID,
-            characteristicUUID
-        );
-
-        if(characteristic.value) {
-            const buffer = Buffer.from(characteristic.value, 'base64');
-            return buffer;
-        }
-
-        return null;
     }
 
     async writeCharacteristic(
@@ -129,19 +171,25 @@ class BluetoothService {
         characteristicUUID: string, 
         data: Buffer
     ): Promise<void> {
+        await this.initialize();
+        
         const device = this.deviceMap.get(deviceID);
 
         if (!device) {
-            console.warn(`Device with ID ${deviceID} not found`);
-            return;
+            throw new Error(`Device with ID ${deviceID} not found`);
         }
 
-        const base64Data = data.toString('base64');
-        await device.writeCharacteristicWithResponseForService(
-            serviceUUID,
-            characteristicUUID,
-            base64Data
-        );
+        try {
+            const base64Data = data.toString('base64');
+            await device.writeCharacteristicWithResponseForService(
+                serviceUUID,
+                characteristicUUID,
+                base64Data
+            );
+        } catch (error) {
+            console.error('Write characteristic error:', error);
+            throw error;
+        }
     }
 
     monitorCharacteristic(
@@ -172,8 +220,11 @@ class BluetoothService {
     }
 
     destroy() {
-        this.stopScan
-        this.manager.destroy();
+        if (this.isInitialized) {
+            this.stopScan();
+            this.manager.destroy();
+            this.isInitialized = false;
+        }
     }
 }
 

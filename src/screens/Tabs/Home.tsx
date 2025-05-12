@@ -26,9 +26,6 @@ export default function Home() {
     
   } = useBluetooth();
 
-  const [isLEDOn, setIsLEDOn] = useState(false);
-
-  // Auto-stop scanning after 10 seconds
   useEffect(() => {
     if (isScanning) {
       const timer = setTimeout(() => {
