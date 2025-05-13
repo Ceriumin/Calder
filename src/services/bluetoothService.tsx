@@ -19,7 +19,6 @@ class BluetoothService {
         }
 
         if (Platform.OS === 'android') {
-            // Request both scan and connect permissions
             const scanGranted = await PermissionsAndroid.request(
                 PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
                 {
@@ -49,7 +48,6 @@ class BluetoothService {
         return false;
     }
 
-    // Initialize BLE manager if it was destroyed
     async initialize() {
         if (!this.isInitialized) {
             this.manager = new BleManager();
@@ -71,10 +69,8 @@ class BluetoothService {
             throw new Error('Bluetooth permission not granted');
         }
 
-        // Clear the device map before starting a new scan
         this.deviceMap.clear();
         
-        // Stops scanning if start scan is called
         this.stopScan();
 
         this.manager.startDeviceScan(
@@ -86,7 +82,7 @@ class BluetoothService {
                     return;
                 }
 
-                if (device && device.name) {  // Only consider devices with names
+                if (device && device.name) {  
                     this.deviceMap.set(device.id, device);
                     onDeviceFound(device);
                 }

@@ -4,6 +4,7 @@ import { AppState } from 'react-native';
 import bluetoothService from '@/services/bluetoothService';
 
 const useBluetooth = () => {
+
     const [isScanning, setIsScanning] = useState(false);
     const [devices, setDevices] = useState<Device[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -11,18 +12,14 @@ const useBluetooth = () => {
     const appState = useRef(AppState.currentState);
     const lastConnectedDeviceId = useRef<string | null>(null);
 
-    // Handle app state changes
     useEffect(() => {
         const subscription = AppState.addEventListener('change', nextAppState => {
             if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-                // App has come to the foreground - reinitialize if needed
                 if (lastConnectedDeviceId.current && !connectedDevice) {
-                    // Try to reconnect to the last device
                     connectToDevice(lastConnectedDeviceId.current)
                         .catch(err => console.log('Auto-reconnect failed:', err));
                 }
             } else if (nextAppState.match(/inactive|background/) && appState.current === 'active') {
-                // App is going to background - save connection state
                 if (connectedDevice) {
                     lastConnectedDeviceId.current = connectedDevice.id;
                 }
