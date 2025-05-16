@@ -1,5 +1,4 @@
 import { TextInput } from "react-native";
-import { Text } from "../base/_index";
 
 interface InputProps {
   placeholder: string;
@@ -15,6 +14,7 @@ export default function Input({
   onChangeText,
   isDisabled = false,
 }: InputProps) {
+
   const inputStyles = {
     backgroundColor: isDisabled ? "#e2e6ea" : "#fff",
     borderColor: "#ced4da",

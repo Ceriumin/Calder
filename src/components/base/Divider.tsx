@@ -1,4 +1,3 @@
-import React from 'react';
 import { View } from 'react-native';
 
 interface DividerProps {
@@ -14,6 +13,7 @@ export default function Divider({
   thickness = 1,
   style = {},
 }: DividerProps ) {
+  
   const dividerStyle = {
     backgroundColor: color,
     width: orientation === 'horizontal' ? '100%' : thickness,

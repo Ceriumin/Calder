@@ -8,6 +8,13 @@ interface HeadingProps {
 }
 
 export default function Heading({ level = 1, children, style }: HeadingProps) {
+
+  // Just to prevent any stupid problems
+  if (level < 1 || level > 6) {
+    throw new Error('Level must be between 1 and 6');
+  }
+
+  // Adjusts the font size based on the heading level
   const fontSize = 24 - (level - 1) * 2; 
 
   return (

@@ -1,4 +1,3 @@
-import React from 'react';
 import { TouchableHighlight, ActivityIndicator, DimensionValue } from 'react-native';
 import { Text } from '../base/_index';
 import color from 'color'; // Changed import style
@@ -24,6 +23,7 @@ export default function Button({
   width = '50%',
   darkenPercent = 10,
 }: ButtonProps) {
+
   const backgroundColor = 
     variation === 'primary' ? '#007BFF' : 
     variation === 'secondary' ? 'transparent' : 
