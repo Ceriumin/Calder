@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 
-import { Button, Input } from '@/components/input/_index';
+import { Button, PasswordField } from '@/components/input/_index';
 
 export default function Home() {
 
@@ -9,22 +9,9 @@ export default function Home() {
 
   return (
     <View>
-      <Button
-        title="Hello"
-        onPress={() => {
-          console.log('Hello');
-        }}
-        variation="primary"
-        isDisabled={false}
-        isLoading={false}
-        isFullWidth={false}
-      />
-      <Input
-        placeholder="Enter text"
+      <PasswordField
         value={changeText}
         onChangeText={setChangeText}
-        isDisabled={false}
-        isFullWidth={false}
       />
     </View>
   );

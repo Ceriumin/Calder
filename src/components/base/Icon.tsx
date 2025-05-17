@@ -1,14 +1,14 @@
-import { Svg } from 'react-native-svg';
+import React from 'react';
+import Svg, { Path } from 'react-native-svg';
 
 interface IconProps {
   size?: number;
   color?: string;
-  PathData?: string;
+  pathData?: string;
 }
 
-export default function Icon({ size = 24, color = 'black', PathData }: IconProps) {
-  
-  if (!PathData) {
+export default function Icon({ size = 24, color = 'black', pathData }: IconProps) {
+  if (!pathData) {
     return null; 
   }
 
@@ -18,7 +18,7 @@ export default function Icon({ size = 24, color = 'black', PathData }: IconProps
       height={size}
       viewBox="0 0 24 24"
       fill="none">
-      <path d={PathData} fill={color} />
+      <Path d={pathData} fill={color} />
     </Svg>
   );
 }

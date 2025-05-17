@@ -1,4 +1,5 @@
 import Button from './Button.tsx';
-import Input from './Input.tsx';
+import InputField from './InputField.tsx';
+import PasswordField from './PasswordField.tsx';
 
-export { Button, Input };
+export { Button, InputField, PasswordField };

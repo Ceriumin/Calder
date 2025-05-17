@@ -8,7 +8,7 @@ interface InputProps {
   isFullWidth?: boolean;
 }
 
-export default function Input({
+export default function InputField({
   placeholder,
   value,
   onChangeText,
