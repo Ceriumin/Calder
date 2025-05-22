@@ -76,7 +76,7 @@ class BluetoothService {
         this.manager.startDeviceScan(
             null,
             { allowDuplicates: false },
-            (error, device) => {
+            (error: string, device: Device | null) => {
                 if (error) {
                     console.error('Error during Bluetooth scan:', error);
                     return;
@@ -201,7 +201,7 @@ class BluetoothService {
         return device.monitorCharacteristicForService(
             serviceUUID,
             characteristicUUID,
-            (error, characteristic) => {
+            (error: String, characteristic: { value?: string }) => {
                 if (error) {
                     console.error('Error monitoring characteristic:', error);
                     return;

@@ -4,24 +4,28 @@ import { AppState } from 'react-native';
 import bluetoothService from '@/services/bluetoothService';
 
 const useBluetooth = () => {
-
     const [isScanning, setIsScanning] = useState(false);
     const [devices, setDevices] = useState<Device[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
+    const [connectedDevices, setConnectedDevices] = useState<Device[]>([]);
     const appState = useRef(AppState.currentState);
-    const lastConnectedDeviceId = useRef<string | null>(null);
+    const lastConnectedDeviceIds = useRef<string[]>([]);
 
     useEffect(() => {
         const subscription = AppState.addEventListener('change', nextAppState => {
             if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-                if (lastConnectedDeviceId.current && !connectedDevice) {
-                    connectToDevice(lastConnectedDeviceId.current)
-                        .catch(err => console.log('Auto-reconnect failed:', err));
+                if (lastConnectedDeviceIds.current.length > 0) {
+                    lastConnectedDeviceIds.current.forEach(deviceId => {
+                        const isAlreadyConnected = connectedDevices.some(device => device.id === deviceId);
+                        if (!isAlreadyConnected) {
+                            connectToDevice(deviceId)
+                                .catch(err => console.log(`Auto-reconnect failed for ${deviceId}:`, err));
+                        }
+                    });
                 }
             } else if (nextAppState.match(/inactive|background/) && appState.current === 'active') {
-                if (connectedDevice) {
-                    lastConnectedDeviceId.current = connectedDevice.id;
+                if (connectedDevices.length > 0) {
+                    lastConnectedDeviceIds.current = connectedDevices.map(device => device.id);
                 }
             }
             appState.current = nextAppState;
@@ -30,7 +34,7 @@ const useBluetooth = () => {
         return () => {
             subscription.remove();
         };
-    }, [connectedDevice]);
+    }, [connectedDevices]);
 
     const startScan = useCallback(async () => {
         setError(null);
@@ -62,8 +66,21 @@ const useBluetooth = () => {
 
         try {
             const device = await bluetoothService.connectToDevice(deviceID);
-            setConnectedDevice(device);
-            lastConnectedDeviceId.current = deviceID;
+            
+            if (device) {
+                setConnectedDevices(prevDevices => {
+                    const exists = prevDevices.some(d => d.id === device.id);
+                    if (!exists) {
+                        return [...prevDevices, device];
+                    }
+                    return prevDevices;
+                });
+                
+                if (!lastConnectedDeviceIds.current.includes(deviceID)) {
+                    lastConnectedDeviceIds.current.push(deviceID);
+                }
+            }
+            
             return device;
         } catch (err: any) {
             setError('Error connecting to device: ' + err.message);
@@ -76,8 +93,13 @@ const useBluetooth = () => {
 
         try {
             await bluetoothService.disconnectFromDevice(deviceID);
-            setConnectedDevice(null);
-            lastConnectedDeviceId.current = null;
+            
+            setConnectedDevices(prevDevices => 
+                prevDevices.filter(device => device.id !== deviceID)
+            );
+            
+            lastConnectedDeviceIds.current = lastConnectedDeviceIds.current.filter(id => id !== deviceID);
+            
             return true;
         } catch (err: any) {
             setError('Error disconnecting from device: ' + err.message);
@@ -85,26 +107,47 @@ const useBluetooth = () => {
         }
     }, []);
 
-    // Cleanup on unmount
+    // Disconnect all devices
+    const disconnectAllDevices = useCallback(async () => {
+        setError(null);
+        
+        try {
+            const devicesToDisconnect = [...connectedDevices];
+            
+            for (const device of devicesToDisconnect) {
+                await bluetoothService.disconnectFromDevice(device.id);
+            }
+            
+            setConnectedDevices([]);
+            lastConnectedDeviceIds.current = [];
+            
+            return true;
+        } catch (err: any) {
+            setError('Error disconnecting devices: ' + err.message);
+            return false;
+        }
+    }, [connectedDevices]);
+
     useEffect(() => {
         return () => {
             stopScan();
-            if (connectedDevice) {
-                bluetoothService.disconnectFromDevice(connectedDevice.id)
+            connectedDevices.forEach(device => {
+                bluetoothService.disconnectFromDevice(device.id)
                     .catch(console.error);
-            }
+            });
         };
-    }, [connectedDevice, stopScan]);
+    }, [connectedDevices, stopScan]);
 
     return {
         isScanning,
         devices,
-        connectedDevice,
+        connectedDevices,
         error,
         startScan,
         stopScan,
-        disconnectFromDevice,
         connectToDevice,
+        disconnectFromDevice,
+        disconnectAllDevices,
     };
 };
 
