@@ -1,202 +1,112 @@
-import React from 'react';
-import bluetoothService from '../services/bluetoothService';
+import { useState, useEffect, useCallback } from 'react';
+import { Device } from 'react-native-ble-plx';
+import BluetoothService from '../services/BluetoothService';
 
-export const useBluetooth = () => {
-  const {
-    devices,
-    connectedDevices,
-    isScanning,
-    hasPermission,
-    checkBluetoothPermission,
-    startScanning,
-    stopScanning,
-    connectToDevice,
-    disconnectFromDevice,
-    loadBondedDevices,
-    readCharacteristic,
-    writeCharacteristic,
-    subscribeToCharacteristic,
-    discoverServicesAndCharacteristics,
-    getBondedDevices,
-    removeBondedDevice,
-  } = bluetoothService();
+interface BluetoothState {
+  isScanning: boolean;
+  isConnecting: boolean;
+  isConnected: boolean;
+  device: Device | null;
+  error: string | null;
+  temperature: number | null;
+  humidity: number | null;
+}
 
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  
-  const handleError = (error: string) => {
-    setError(error);
-    setIsLoading(false);
-  };
+export default function useBluetooth() {
+  const [state, setState] = useState<BluetoothState>({
+    isScanning: false,
+    isConnecting: false,
+    isConnected: false,
+    device: null,
+    error: null,
+    temperature: null,
+    humidity: null,
+  });
 
-  const handleLoading = (loading: boolean) => {
-    setIsLoading(loading);
-  };
+  const updateState = useCallback((newState: Partial<BluetoothState>) => {
+    setState(prevState => ({ ...prevState, ...newState }));
+  }, []);
 
-  const handlePermissionCheck = async () => {
+  const startScan = useCallback(async () => {
     try {
-      await checkBluetoothPermission();
-    } catch (error) {
-      handleError('Failed to check Bluetooth permission');
-    }
-  };
-
-  const handleStartScanning = async () => {
-    try {
-      handleLoading(true);
-      await startScanning();
-    } catch (error) {
-      handleError('Failed to start scanning');
-    } finally {
-      handleLoading(false);
-    }
-  };
-
-  const handleStopScanning = async () => {
-    try {
-      handleLoading(true);
-      await stopScanning();
-    } catch (error) {
-      handleError('Failed to stop scanning');
-    } finally {
-      handleLoading(false);
-    }
-  };
-
-  const handleConnectToDevice = async (deviceId: string) => {
-    try {
-      handleLoading(true);
-      const device = devices.find((device: any) => device.id === deviceId);
-      if (!device) {
-        throw new Error('Device not found');
-      }
-      const result = await connectToDevice(device);
+      updateState({ isScanning: true, error: null });
       
-      if (!result) {
-        throw new Error('Failed to connect to device');
-      }
+      await BluetoothService.scanForDevices((device) => {
+        updateState({ device, isScanning: false });
+      });
       
-      return result;
+      // If the scan completes without finding a device
+      setTimeout(() => {
+        setState((prevState) => {
+          if (prevState.isScanning) {
+            return { ...prevState, isScanning: false, error: 'No ESP32 device found' };
+          }
+          return prevState;
+        });
+      }, 5000);
     } catch (error) {
-      handleError('Failed to connect to device');
-      return null;
-    } finally {
-      handleLoading(false);
+      updateState({ 
+        isScanning: false, 
+        error: error instanceof Error ? error.message : 'Unknown error during scan'
+      });
     }
-  };
+  }, [updateState]);
 
-  const handleDisconnectFromDevice = async (deviceId: string, removeBond = false) => {
-    try {
-      handleLoading(true);
-      await disconnectFromDevice(deviceId, removeBond);
-    } catch (error) {
-      handleError('Failed to disconnect from device');
-    } finally {
-      handleLoading(false);
+  const connectToDevice = useCallback(async () => {
+    if (!state.device) {
+      updateState({ error: 'No device to connect to' });
+      return;
     }
-  };
+    
+    try {
+      updateState({ isConnecting: true, error: null });
+      await BluetoothService.connectToDevice(state.device);
+      updateState({ isConnecting: false, isConnected: true });
+      
+      // Start monitoring temperature and humidity
+      BluetoothService.monitorTemperature((temp) => {
+        updateState({ temperature: temp });
+      });
+      
+      BluetoothService.monitorHumidity((humidity) => {
+        updateState({ humidity: humidity });
+      });
+    } catch (error) {
+      updateState({ 
+        isConnecting: false, 
+        isConnected: false,
+        error: error instanceof Error ? error.message : 'Connection failed' 
+      });
+    }
+  }, [state.device, updateState]);
 
-  const handleLoadBondedDevices = async () => {
+  const disconnect = useCallback(async () => {
     try {
-      handleLoading(true);
-      await loadBondedDevices();
+      await BluetoothService.disconnect();
+      updateState({ 
+        isConnected: false, 
+        device: null,
+        temperature: null,
+        humidity: null,
+      });
     } catch (error) {
-      handleError('Failed to load bonded devices');
-    } finally {
-      handleLoading(false);
+      updateState({ 
+        error: error instanceof Error ? error.message : 'Disconnection failed' 
+      });
     }
-  };
+  }, [updateState]);
 
-  const handleReadCharacteristic = async (deviceId: string, serviceUUID: string, characteristicUUID: string) => {
-    try {
-      handleLoading(true);
-      return await readCharacteristic(deviceId, serviceUUID, characteristicUUID);
-    } catch (error) {
-      handleError('Failed to read characteristic');
-      return null;
-    } finally {
-      handleLoading(false);
-    }
-  };
-
-  const handleWriteCharacteristic = async (deviceId: string, serviceUUID: string, characteristicUUID: string, value: string) => {
-    try {
-      handleLoading(true);
-      await writeCharacteristic(deviceId, serviceUUID, characteristicUUID, value);
-      return true;
-    } catch (error) {
-      handleError('Failed to write characteristic');
-      return false;
-    } finally {
-      handleLoading(false);
-    }
-  };
-
-  const handleSubscribeToCharacteristic = async (deviceId: string, serviceUUID: string, characteristicUUID: string, callback: (value: any) => void) => {
-    try {
-      handleLoading(true);
-      await subscribeToCharacteristic(deviceId, serviceUUID, characteristicUUID, callback);
-      return true;
-    } catch (error) {
-      handleError('Failed to subscribe to characteristic');
-      return false;
-    } finally {
-      handleLoading(false);
-    }
-  };
-
-  const handleDiscoverServices = async (deviceId: string) => {
-    try {
-      handleLoading(true);
-      return await discoverServicesAndCharacteristics(deviceId);
-    } catch (error) {
-      handleError('Failed to discover services');
-      return null;
-    } finally {
-      handleLoading(false);
-    }
-  };
-
-  const handleGetBondedDevices = async () => {
-    try {
-      handleLoading(true);
-      return await getBondedDevices();
-    } catch (error) {
-      handleError('Failed to get bonded devices');
-      return [];
-    } finally {
-      handleLoading(false);
-    }
-  };
-
-  const handleRemoveBond = async (deviceId: string) => {
-    try {
-      handleLoading(true);
-      await disconnectFromDevice(deviceId, true);
-    } catch (error) {
-      handleError('Failed to remove bond');
-    }
-  };
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      BluetoothService.disconnect().catch(console.error);
+    };
+  }, []);
 
   return {
-    devices,
-    connectedDevices,
-    isScanning,
-    hasPermission,
-    isLoading,
-    error,
-    removeBondedDevice: handleRemoveBond,
-    checkPermission: handlePermissionCheck,
-    startScanning: handleStartScanning,
-    stopScanning: handleStopScanning,
-    connectToDevice: handleConnectToDevice,
-    disconnectFromDevice: handleDisconnectFromDevice,
-    loadBondedDevices: handleLoadBondedDevices,
-    readCharacteristic: handleReadCharacteristic,
-    writeCharacteristic: handleWriteCharacteristic,
-    subscribeToCharacteristic: handleSubscribeToCharacteristic,
-    discoverServices: handleDiscoverServices,
-    getBondedDevices: handleGetBondedDevices,
-    clearError: () => setError(null),
+    ...state,
+    startScan,
+    connectToDevice,
+    disconnect,
   };
-};
+}

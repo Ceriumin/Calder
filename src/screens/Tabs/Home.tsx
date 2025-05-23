@@ -1,248 +1,136 @@
-import React, { useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  FlatList, 
-  ActivityIndicator, 
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
   SafeAreaView,
-  Alert,
-  RefreshControl
+  ScrollView,
 } from 'react-native';
-import { useBluetooth } from '@/hooks/useBluetooth';
+import useBluetooth from '../../hooks/useBluetooth';
 
-const Home = () => {
+const Home: React.FC = () => {
   const {
-    devices,
-    connectedDevices,
     isScanning,
-    hasPermission,
-    isLoading,
+    isConnecting,
+    isConnected,
+    device,
     error,
-    checkPermission,
-    startScanning,
-    stopScanning,
+    temperature,
+    humidity,
+    startScan,
     connectToDevice,
-    disconnectFromDevice,
-    discoverServices,
-    clearError,
-    removeBondedDevice,
+    disconnect,
   } = useBluetooth();
-
-  // Request permissions when component mounts
-  useEffect(() => {
-    checkPermission();
-  }, []);
-
-  // Show error alerts
-  useEffect(() => {
-    if (error) {
-      Alert.alert('Error', error, [
-        { text: 'OK', onPress: clearError }
-      ]);
-    }
-  }, [error]);
-
-  // Handle device connection
-  const handleConnect = async (deviceId: string) => {
-    await connectToDevice(deviceId);
-    
-    // After successful connection, discover services
-    const connectedDevice = connectedDevices.find(d => d.id === deviceId);
-    if (connectedDevice) {
-      Alert.alert(
-        'Connection Successful',
-        `Connected to ${connectedDevice.name || 'device'}.`,
-        [
-          { text: 'Explore Services', onPress: () => handleExploreServices(deviceId) },
-          { text: 'OK' }
-        ]
-      );
-    }
-  };
-
-  // Handle service discovery
-  const handleExploreServices = async (deviceId: string) => {
-    const services = await discoverServices(deviceId);
-    if (services) {
-      console.log('Services discovered:', services);
-      // You could navigate to a device detail screen here
-    }
-  };
-
-  // Render device item
-  const renderDeviceItem = ({ item }: { item: { id: string; name?: string; rssi?: number } }) => {
-    const isConnected = connectedDevices.some(d => d.id === item.id);
-    
-    return (
-      <View style={styles.deviceItem}>
-        <View style={styles.deviceInfo}>
-          <Text style={styles.deviceName}>{item.name || 'Unknown Device'}</Text>
-          <Text style={styles.deviceId}>ID: {item.id}</Text>
-          <Text style={styles.deviceDetails}>
-            Signal: {item.rssi ? `${item.rssi} dBm` : 'N/A'}
-          </Text>
-          {isConnected && (
-            <View style={styles.connectedBadge}>
-              <Text style={styles.connectedText}>Connected</Text>
-            </View>
-          )}
-        </View>
-        
-        <TouchableOpacity
-          style={[styles.actionButton, isConnected ? styles.disconnectButton : styles.connectButton]}
-          onPress={() => isConnected 
-            ? disconnectFromDevice(item.id) 
-            : handleConnect(item.id)
-          }
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Processing...' : isConnected ? 'Disconnect' : 'Connect'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
-  // Empty state message
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
-        {isScanning ? 'Searching for devices...' : 'No devices found'}
-      </Text>
-      {!isScanning && (
-        <TouchableOpacity 
-          style={styles.scanButton}
-          onPress={startScanning}
-          disabled={!hasPermission || isLoading}
-        >
-          <Text style={styles.buttonText}>Scan Again</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
-  // Create a merged and deduplicated list of devices
-  const getDeviceList = () => {
-    // First add all connected devices
-    const deviceMap = new Map();
-    
-    // Add connected devices first (they have priority)
-    connectedDevices.forEach(device => {
-      deviceMap.set(device.id, {
-        id: device.id,
-        name: device.name || 'Unknown Device',
-        rssi: device.rssi ?? undefined,
-        isConnected: true
-      });
-    });
-    
-    // Then add discovered devices that aren't already connected
-    devices.forEach(device => {
-      if (!deviceMap.has(device.id)) {
-        deviceMap.set(device.id, {
-          id: device.id,
-          name: device.name || 'Unknown Device',
-          rssi: device.rssi ?? undefined,
-          isConnected: false
-        });
-      }
-    });
-    
-    // Convert map to array
-    return Array.from(deviceMap.values());
-  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Calder Devices</Text>
-      </View>
-
-      {/* Permission warning */}
-      {!hasPermission && (
-        <View style={styles.permissionWarning}>
-          <Text style={styles.permissionText}>Bluetooth permission required</Text>
-          <TouchableOpacity 
-            style={styles.permissionButton}
-            onPress={checkPermission}
-          >
-            <Text style={styles.buttonText}>Grant Permission</Text>
-          </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Calder</Text>
+          <Text style={styles.subtitle}>ESP32 Temperature & Humidity Monitor</Text>
         </View>
-      )}
 
-      {/* Scanning indicator */}
-      {isScanning && (
-        <View style={styles.scanningIndicator}>
-          <ActivityIndicator size="small" color="#007AFF" />
-          <Text style={styles.scanningText}>Scanning for devices...</Text>
-        </View>
-      )}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
-      {/* Device list */}
-      <FlatList
-        contentContainerStyle={styles.listContainer}
-        data={getDeviceList()}
-        renderItem={({ item }) => {
-          const isConnected = item.isConnected;
-          
-          return (
-            <View style={styles.deviceItem}>
-              <View style={styles.deviceInfo}>
-                <Text style={styles.deviceName}>{item.name}</Text>
-                <Text style={styles.deviceId}>ID: {item.id}</Text>
-                <Text style={styles.deviceDetails}>
-                  Signal: {item.rssi ? `${item.rssi} dBm` : 'N/A'}
-                </Text>
-                {isConnected && (
-                  <View style={styles.connectedBadge}>
-                    <Text style={styles.connectedText}>Connected</Text>
-                  </View>
-                )}
-              </View>
-              
-              <TouchableOpacity
-                style={[styles.actionButton, isConnected ? styles.disconnectButton : styles.connectButton]}
-                onPress={() => isConnected 
-                  ? disconnectFromDevice(item.id) 
-                  : handleConnect(item.id)
-                }
-                disabled={isLoading}
-              >
-                <Text style={styles.buttonText}>
-                  {isLoading ? 'Processing...' : isConnected ? 'Disconnect' : 'Connect'}
-                </Text>
-                <Text>
-                </Text>
-              </TouchableOpacity>
+        <View style={styles.deviceSection}>
+          <Text style={styles.sectionTitle}>Device Status</Text>
+          <View style={styles.statusContainer}>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusLabel}>Connection:</Text>
+              <Text style={[
+                styles.statusValue, 
+                { color: isConnected ? '#34C759' : '#FF9500' }
+              ]}>
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </Text>
             </View>
+            
+            {device && (
+              <View style={styles.statusItem}>
+                <Text style={styles.statusLabel}>Device:</Text>
+                <Text style={styles.statusValue}>{device.name || device.id}</Text>
+              </View>
+            )}
+          </View>
+        </View>
 
-          );
-        }}
-        keyExtractor={item => item.id}
-        ListEmptyComponent={renderEmptyState}
-        refreshControl={
-          <RefreshControl
-            refreshing={isScanning}
-            onRefresh={startScanning}
-            colors={['#007AFF']}
-          />
-        }
-      />
+        {isConnected && (
+          <View style={styles.readingsSection}>
+            <Text style={styles.sectionTitle}>Sensor Readings</Text>
+            
+            <View style={styles.readingCard}>
+              <View style={styles.readingIconContainer}>
+              </View>
+              <View style={styles.readingDetails}>
+                <Text style={styles.readingLabel}>Temperature</Text>
+                <Text style={styles.readingValue}>
+                  {temperature !== null ? `${temperature.toFixed(1)}°C` : 'Loading...'}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.readingCard}>
+              <View style={styles.readingIconContainer}>
+              </View>
+              <View style={styles.readingDetails}>
+                <Text style={styles.readingLabel}>Humidity</Text>
+                <Text style={styles.readingValue}>
+                  {humidity !== null ? `${humidity.toFixed(1)}%` : 'Loading...'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
 
-      {/* Floating action button */}
-      <TouchableOpacity 
-        style={[styles.fab, isScanning ? styles.stopFab : styles.scanFab]} 
-        onPress={isScanning ? stopScanning : startScanning}
-        disabled={!hasPermission || isLoading}
-      >
-        <Text style={styles.fabText}>
-          {isScanning ? 'Stop' : 'Scan'}
-        </Text>
-      </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          {!device && !isConnected && (
+            <TouchableOpacity
+              style={[styles.button, styles.scanButton]}
+              onPress={startScan}
+              disabled={isScanning}
+            >
+              {isScanning ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Scan for ESP32</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+
+          {device && !isConnected && (
+            <TouchableOpacity
+              style={[styles.button, styles.connectButton]}
+              onPress={connectToDevice}
+              disabled={isConnecting}
+            >
+              {isConnecting ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Connect</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+
+          {isConnected && (
+            <TouchableOpacity
+              style={[styles.button, styles.disconnectButton]}
+              onPress={disconnect}
+            >
+              <Text style={styles.buttonText}>Disconnect</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -250,160 +138,139 @@ const Home = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F2F2F7',
+  },
+  scrollContent: {
+    padding: 20,
   },
   header: {
-    padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e1e1',
+    marginBottom: 30,
+    alignItems: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#1C1C1E',
   },
-  permissionWarning: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#ff5252',
-    padding: 12,
+  subtitle: {
+    fontSize: 16,
+    color: '#8E8E93',
+    marginTop: 5,
   },
-  permissionText: {
-    color: 'white',
-    fontWeight: '500',
-    flex: 1,
-    marginLeft: 8,
-  },
-  permissionButton: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-  },
-  scanningIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 8,
-    backgroundColor: '#e3f2fd',
-  },
-  scanningText: {
-    marginLeft: 8,
-    color: '#0d47a1',
-  },
-  listContainer: {
-    flexGrow: 1,
-    padding: 12,
-  },
-  deviceItem: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
+  errorContainer: {
+    backgroundColor: '#FFE5E5',
+    padding: 15,
     borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
+    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 20,
+  },
+  errorText: {
+    color: '#FF3B30',
+    marginLeft: 10,
+    flex: 1,
+  },
+  deviceSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  deviceInfo: {
-    flex: 1,
-  },
-  deviceName: {
+  sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    color: '#1C1C1E',
+    marginBottom: 15,
   },
-  deviceId: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
+  statusContainer: {
+    gap: 10,
   },
-  deviceDetails: {
-    fontSize: 12,
-    color: '#888',
+  statusItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  connectedBadge: {
-    backgroundColor: '#4caf50',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginTop: 6,
+  statusLabel: {
+    fontSize: 16,
+    color: '#3C3C43',
   },
-  connectedText: {
-    color: 'white',
-    fontSize: 12,
+  statusValue: {
+    fontSize: 16,
     fontWeight: '500',
   },
-  actionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    minWidth: 100,
-    alignItems: 'center',
+  readingsSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  connectButton: {
-    backgroundColor: '#2196f3',
-  },
-  disconnectButton: {
-    backgroundColor: '#f44336',
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
+  readingCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 30,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    padding: 15,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 8,
+    marginBottom: 10,
   },
-  scanFab: {
-    backgroundColor: '#2196f3',
-  },
-  stopFab: {
-    backgroundColor: '#f44336',
-  },
-  fabText: {
-    color: '#fff',
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  emptyContainer: {
-    flex: 1,
+  readingIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    marginTop: 60,
+    marginRight: 15,
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#757575',
-    marginVertical: 16,
-    textAlign: 'center',
+  readingDetails: {
+    flex: 1,
+  },
+  readingLabel: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+  readingValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1C1C1E',
+  },
+  buttonContainer: {
+    marginTop: 10,
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
   },
   scanButton: {
-    backgroundColor: '#2196f3',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    marginTop: 8,
-  }
+    backgroundColor: '#007AFF',
+  },
+  connectButton: {
+    backgroundColor: '#34C759',
+  },
+  disconnectButton: {
+    backgroundColor: '#FF3B30',
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 export default Home;
