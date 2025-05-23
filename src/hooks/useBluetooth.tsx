@@ -1,154 +1,202 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Device } from 'react-native-ble-plx';
-import { AppState } from 'react-native';
-import bluetoothService from '@/services/bluetoothService';
+import React from 'react';
+import bluetoothService from '../services/bluetoothService';
 
-const useBluetooth = () => {
-    const [isScanning, setIsScanning] = useState(false);
-    const [devices, setDevices] = useState<Device[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [connectedDevices, setConnectedDevices] = useState<Device[]>([]);
-    const appState = useRef(AppState.currentState);
-    const lastConnectedDeviceIds = useRef<string[]>([]);
+export const useBluetooth = () => {
+  const {
+    devices,
+    connectedDevices,
+    isScanning,
+    hasPermission,
+    checkBluetoothPermission,
+    startScanning,
+    stopScanning,
+    connectToDevice,
+    disconnectFromDevice,
+    loadBondedDevices,
+    readCharacteristic,
+    writeCharacteristic,
+    subscribeToCharacteristic,
+    discoverServicesAndCharacteristics,
+    getBondedDevices,
+    removeBondedDevice,
+  } = bluetoothService();
 
-    useEffect(() => {
-        const subscription = AppState.addEventListener('change', nextAppState => {
-            if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-                if (lastConnectedDeviceIds.current.length > 0) {
-                    lastConnectedDeviceIds.current.forEach(deviceId => {
-                        const isAlreadyConnected = connectedDevices.some(device => device.id === deviceId);
-                        if (!isAlreadyConnected) {
-                            connectToDevice(deviceId)
-                                .catch(err => console.log(`Auto-reconnect failed for ${deviceId}:`, err));
-                        }
-                    });
-                }
-            } else if (nextAppState.match(/inactive|background/) && appState.current === 'active') {
-                if (connectedDevices.length > 0) {
-                    lastConnectedDeviceIds.current = connectedDevices.map(device => device.id);
-                }
-            }
-            appState.current = nextAppState;
-        });
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  
+  const handleError = (error: string) => {
+    setError(error);
+    setIsLoading(false);
+  };
 
-        return () => {
-            subscription.remove();
-        };
-    }, [connectedDevices]);
+  const handleLoading = (loading: boolean) => {
+    setIsLoading(loading);
+  };
 
-    const startScan = useCallback(async () => {
-        setError(null);
-        setDevices([]);
+  const handlePermissionCheck = async () => {
+    try {
+      await checkBluetoothPermission();
+    } catch (error) {
+      handleError('Failed to check Bluetooth permission');
+    }
+  };
 
-        try {
-            setIsScanning(true);
-            await bluetoothService.startScan((device: Device) => {
-                setDevices((prevDevices) => {
-                    const existingDevice = prevDevices.find((d) => d.id === device.id);
-                    if (!existingDevice) {
-                        return [...prevDevices, device];
-                    }
-                    return prevDevices;
-                });
-            });
-        } catch (err: any) {
-            setError('Error starting scan: ' + err.message);
-        }
-    }, []);
+  const handleStartScanning = async () => {
+    try {
+      handleLoading(true);
+      await startScanning();
+    } catch (error) {
+      handleError('Failed to start scanning');
+    } finally {
+      handleLoading(false);
+    }
+  };
 
-    const stopScan = useCallback(() => {
-        setIsScanning(false);
-        bluetoothService.stopScan();
-    }, []);
+  const handleStopScanning = async () => {
+    try {
+      handleLoading(true);
+      await stopScanning();
+    } catch (error) {
+      handleError('Failed to stop scanning');
+    } finally {
+      handleLoading(false);
+    }
+  };
 
-    const connectToDevice = useCallback(async (deviceID: string) => {
-        setError(null);
+  const handleConnectToDevice = async (deviceId: string) => {
+    try {
+      handleLoading(true);
+      const device = devices.find((device: any) => device.id === deviceId);
+      if (!device) {
+        throw new Error('Device not found');
+      }
+      const result = await connectToDevice(device);
+      
+      if (!result) {
+        throw new Error('Failed to connect to device');
+      }
+      
+      return result;
+    } catch (error) {
+      handleError('Failed to connect to device');
+      return null;
+    } finally {
+      handleLoading(false);
+    }
+  };
 
-        try {
-            const device = await bluetoothService.connectToDevice(deviceID);
-            
-            if (device) {
-                setConnectedDevices(prevDevices => {
-                    const exists = prevDevices.some(d => d.id === device.id);
-                    if (!exists) {
-                        return [...prevDevices, device];
-                    }
-                    return prevDevices;
-                });
-                
-                if (!lastConnectedDeviceIds.current.includes(deviceID)) {
-                    lastConnectedDeviceIds.current.push(deviceID);
-                }
-            }
-            
-            return device;
-        } catch (err: any) {
-            setError('Error connecting to device: ' + err.message);
-            return null;
-        }
-    }, []);
+  const handleDisconnectFromDevice = async (deviceId: string, removeBond = false) => {
+    try {
+      handleLoading(true);
+      await disconnectFromDevice(deviceId, removeBond);
+    } catch (error) {
+      handleError('Failed to disconnect from device');
+    } finally {
+      handleLoading(false);
+    }
+  };
 
-    const disconnectFromDevice = useCallback(async (deviceID: string) => {
-        setError(null);
+  const handleLoadBondedDevices = async () => {
+    try {
+      handleLoading(true);
+      await loadBondedDevices();
+    } catch (error) {
+      handleError('Failed to load bonded devices');
+    } finally {
+      handleLoading(false);
+    }
+  };
 
-        try {
-            await bluetoothService.disconnectFromDevice(deviceID);
-            
-            setConnectedDevices(prevDevices => 
-                prevDevices.filter(device => device.id !== deviceID)
-            );
-            
-            lastConnectedDeviceIds.current = lastConnectedDeviceIds.current.filter(id => id !== deviceID);
-            
-            return true;
-        } catch (err: any) {
-            setError('Error disconnecting from device: ' + err.message);
-            return false;
-        }
-    }, []);
+  const handleReadCharacteristic = async (deviceId: string, serviceUUID: string, characteristicUUID: string) => {
+    try {
+      handleLoading(true);
+      return await readCharacteristic(deviceId, serviceUUID, characteristicUUID);
+    } catch (error) {
+      handleError('Failed to read characteristic');
+      return null;
+    } finally {
+      handleLoading(false);
+    }
+  };
 
-    // Disconnect all devices
-    const disconnectAllDevices = useCallback(async () => {
-        setError(null);
-        
-        try {
-            const devicesToDisconnect = [...connectedDevices];
-            
-            for (const device of devicesToDisconnect) {
-                await bluetoothService.disconnectFromDevice(device.id);
-            }
-            
-            setConnectedDevices([]);
-            lastConnectedDeviceIds.current = [];
-            
-            return true;
-        } catch (err: any) {
-            setError('Error disconnecting devices: ' + err.message);
-            return false;
-        }
-    }, [connectedDevices]);
+  const handleWriteCharacteristic = async (deviceId: string, serviceUUID: string, characteristicUUID: string, value: string) => {
+    try {
+      handleLoading(true);
+      await writeCharacteristic(deviceId, serviceUUID, characteristicUUID, value);
+      return true;
+    } catch (error) {
+      handleError('Failed to write characteristic');
+      return false;
+    } finally {
+      handleLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        return () => {
-            stopScan();
-            connectedDevices.forEach(device => {
-                bluetoothService.disconnectFromDevice(device.id)
-                    .catch(console.error);
-            });
-        };
-    }, [connectedDevices, stopScan]);
+  const handleSubscribeToCharacteristic = async (deviceId: string, serviceUUID: string, characteristicUUID: string, callback: (value: any) => void) => {
+    try {
+      handleLoading(true);
+      await subscribeToCharacteristic(deviceId, serviceUUID, characteristicUUID, callback);
+      return true;
+    } catch (error) {
+      handleError('Failed to subscribe to characteristic');
+      return false;
+    } finally {
+      handleLoading(false);
+    }
+  };
 
-    return {
-        isScanning,
-        devices,
-        connectedDevices,
-        error,
-        startScan,
-        stopScan,
-        connectToDevice,
-        disconnectFromDevice,
-        disconnectAllDevices,
-    };
+  const handleDiscoverServices = async (deviceId: string) => {
+    try {
+      handleLoading(true);
+      return await discoverServicesAndCharacteristics(deviceId);
+    } catch (error) {
+      handleError('Failed to discover services');
+      return null;
+    } finally {
+      handleLoading(false);
+    }
+  };
+
+  const handleGetBondedDevices = async () => {
+    try {
+      handleLoading(true);
+      return await getBondedDevices();
+    } catch (error) {
+      handleError('Failed to get bonded devices');
+      return [];
+    } finally {
+      handleLoading(false);
+    }
+  };
+
+  const handleRemoveBond = async (deviceId: string) => {
+    try {
+      handleLoading(true);
+      await disconnectFromDevice(deviceId, true);
+    } catch (error) {
+      handleError('Failed to remove bond');
+    }
+  };
+
+  return {
+    devices,
+    connectedDevices,
+    isScanning,
+    hasPermission,
+    isLoading,
+    error,
+    removeBondedDevice: handleRemoveBond,
+    checkPermission: handlePermissionCheck,
+    startScanning: handleStartScanning,
+    stopScanning: handleStopScanning,
+    connectToDevice: handleConnectToDevice,
+    disconnectFromDevice: handleDisconnectFromDevice,
+    loadBondedDevices: handleLoadBondedDevices,
+    readCharacteristic: handleReadCharacteristic,
+    writeCharacteristic: handleWriteCharacteristic,
+    subscribeToCharacteristic: handleSubscribeToCharacteristic,
+    discoverServices: handleDiscoverServices,
+    getBondedDevices: handleGetBondedDevices,
+    clearError: () => setError(null),
+  };
 };
-
-export default useBluetooth;

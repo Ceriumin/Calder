@@ -1,3 +1,3 @@
-import BluetoothService from './bluetoothService';
+import bluetoothService from './bluetoothService';
 
-export { BluetoothService };
+export { bluetoothService };

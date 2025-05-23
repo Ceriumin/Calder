@@ -60,9 +60,6 @@ export const useAuth = () => {
         }
     }
 
-    // Clears the error state in the auth slice
-    // This is useful to reset the error state after an error has been handled
-    // and the user is ready to try again
     const clearErrorState = () => {
         dispatch(clearError());
     } 
