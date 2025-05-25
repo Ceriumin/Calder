@@ -65,8 +65,6 @@ const Home: React.FC = () => {
             <Text style={styles.sectionTitle}>Sensor Readings</Text>
             
             <View style={styles.readingCard}>
-              <View style={styles.readingIconContainer}>
-              </View>
               <View style={styles.readingDetails}>
                 <Text style={styles.readingLabel}>Temperature</Text>
                 <Text style={styles.readingValue}>
@@ -76,8 +74,6 @@ const Home: React.FC = () => {
             </View>
             
             <View style={styles.readingCard}>
-              <View style={styles.readingIconContainer}>
-              </View>
               <View style={styles.readingDetails}>
                 <Text style={styles.readingLabel}>Humidity</Text>
                 <Text style={styles.readingValue}>

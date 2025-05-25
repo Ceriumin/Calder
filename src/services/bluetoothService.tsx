@@ -2,11 +2,15 @@ import { BleManager, Device, Subscription } from 'react-native-ble-plx';
 import { PermissionsAndroid, Platform } from 'react-native';
 import base64 from 'react-native-base64';
 
-// Match the UUIDs from the ESP32 code
 const ESP32_SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
-const TEMP_CHAR_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a1';
-const HUMIDITY_CHAR_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a2';
+const ENV_CHAR_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a1';
 const ESP32_DEVICE_NAME = 'ESP32-Calder';
+
+// Define interface for environment readings
+interface EnvironmentReading {
+  temp: number;
+  humidity: number;
+}
 
 class BluetoothService {
   manager: BleManager;
@@ -67,6 +71,7 @@ class BluetoothService {
       const connectedDevice = await device.connect();
       const discoveredDevice = await connectedDevice.discoverAllServicesAndCharacteristics();
       this.device = discoveredDevice;
+      
       return discoveredDevice;
     } catch (error) {
       console.error('Connection error:', error);
@@ -91,7 +96,7 @@ class BluetoothService {
     }
   }
 
-  async readTemperature(): Promise<number> {
+  async readEnvironmentData(): Promise<EnvironmentReading[]> {
     if (!this.device) {
       throw new Error('Device not connected');
     }
@@ -99,13 +104,47 @@ class BluetoothService {
     try {
       const characteristic = await this.device.readCharacteristicForService(
         ESP32_SERVICE_UUID,
-        TEMP_CHAR_UUID
+        ENV_CHAR_UUID
       );
       
       if (characteristic.value) {
-        const tempString = base64.decode(characteristic.value);
-        return parseFloat(tempString);
+        const dataString = base64.decode(characteristic.value);
+        console.log('Received data string:', dataString);
+        try {
+          // Parse the JSON array
+          const data = JSON.parse(dataString);
+          
+          // Ensure we're handling the data correctly regardless of format
+          if (Array.isArray(data)) {
+            return data as EnvironmentReading[];
+          } else if (typeof data === 'object' && data !== null) {
+            // Handle case where it might be a single object
+            return [data as EnvironmentReading];
+          }
+          return [];
+        } catch (e) {
+          console.error('Error parsing environment data:', e, 'Raw data:', dataString);
+          return [];
+        }
       }
+      return [];
+    } catch (error) {
+      console.error('Error reading environment data:', error);
+      throw error;
+    }
+  }
+
+  async readTemperature(): Promise<number> {
+    if (!this.device) {
+      throw new Error('Device not connected');
+    }
+    
+    try {
+      const readings = await this.readEnvironmentData();
+      if (readings.length > 0) {
+        return readings[readings.length - 1].temp;
+      }
+
       return 0;
     } catch (error) {
       console.error('Error reading temperature:', error);
@@ -119,14 +158,10 @@ class BluetoothService {
     }
     
     try {
-      const characteristic = await this.device.readCharacteristicForService(
-        ESP32_SERVICE_UUID,
-        HUMIDITY_CHAR_UUID
-      );
-      
-      if (characteristic.value) {
-        const humidityString = base64.decode(characteristic.value);
-        return parseFloat(humidityString);
+      const readings = await this.readEnvironmentData();
+      // Return the most recent humidity reading if available
+      if (readings.length > 0) {
+        return readings[readings.length - 1].humidity;
       }
       return 0;
     } catch (error) {
@@ -135,48 +170,56 @@ class BluetoothService {
     }
   }
 
-  monitorTemperature(onReading: (temp: number) => void): void {
+  monitorEnvironmentData(onDataReceived: (readings: EnvironmentReading[]) => void): void {
     if (!this.device) {
       throw new Error('Device not connected');
     }
     
     this.tempSubscription = this.device.monitorCharacteristicForService(
       ESP32_SERVICE_UUID,
-      TEMP_CHAR_UUID,
+      ENV_CHAR_UUID,
       (error, characteristic) => {
         if (error) {
-          console.error('Temperature monitoring error:', error);
+          console.error('Environment data monitoring error:', error);
           return;
         }
         
         if (characteristic?.value) {
-          const tempString = base64.decode(characteristic.value);
-          onReading(parseFloat(tempString));
+          const dataString = base64.decode(characteristic.value);
+          console.log('Received notification data:', dataString);
+          try {
+            // Parse the JSON array
+            const data = JSON.parse(dataString);
+            
+            if (Array.isArray(data)) {
+              onDataReceived(data as EnvironmentReading[]);
+            } else if (typeof data === 'object' && data !== null) {
+              onDataReceived([data as EnvironmentReading]);
+            } else {
+              console.error('Unexpected data format:', data);
+            }
+          } catch (e) {
+            console.error('Error parsing environment data:', e, 'Raw data:', dataString);
+          }
         }
       }
     );
   }
 
-  monitorHumidity(onReading: (humidity: number) => void): void {
-    if (!this.device) {
-      throw new Error('Device not connected');
-    }
-    
-    this.humiditySubscription = this.device.monitorCharacteristicForService(
-      ESP32_SERVICE_UUID,
-      HUMIDITY_CHAR_UUID,
-      (error, characteristic) => {
-        if (error) {
-          console.error('Humidity monitoring error:', error);
-          return;
-        }
-        
-        if (characteristic?.value) {
-          const humidityString = base64.decode(characteristic.value);
-          onReading(parseFloat(humidityString));
-        }
+  monitorTemperature(onReading: (temp: number) => void): void {
+    this.monitorEnvironmentData((readings) => {
+      if (readings.length > 0) {
+        onReading(readings[readings.length - 1].temp);
       }
-    );
+    });
+  }
+
+  monitorHumidity(onReading: (humidity: number) => void): void {
+    this.monitorEnvironmentData((readings) => {
+      if (readings.length > 0) {
+        onReading(readings[readings.length - 1].humidity);
+      }
+    });
   }
 }
 
