@@ -1,10 +1,18 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+
+import { Button, PasswordField } from '@/components/input/_index';
 
 export default function Home() {
+
+  const [changeText, setChangeText] = React.useState<string>('');
+
   return (
     <View>
-      {/* Content Placeholder */}
+      <PasswordField
+        value={changeText}
+        onChangeText={setChangeText}
+      />
     </View>
   );
 }
