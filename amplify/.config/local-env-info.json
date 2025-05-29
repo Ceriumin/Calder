@@ -1,5 +1,6 @@
 {
-  "projectPath": "/Users/gracjan/Developer/Projects/Calder",
+  "projectPath": "/Users/baryla/Developer/Repositories/Calder",
+  "envName": "dev",
   "defaultEditor": "Visual Studio Code",
-  "envName": "dev"
+  "noUpdateBackend": true
 }
