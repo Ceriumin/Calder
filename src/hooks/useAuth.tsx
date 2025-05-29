@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 export const useAuth = () => {
 
   const dispatch = useDispatch();
-  const { isAuthenticated, user, error, isLoading } = useAppSelector(state => state.auth);
-
+  
+    const { isAuthenticated, user, error, isLoading } = useAppSelector(state => state.auth);
     const [isSigningIn, setIsSigningIn] = useState(false);
     const [isSigningUp, setIsSigningUp] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);

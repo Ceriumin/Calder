@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Device } from 'react-native-ble-plx';
-import BluetoothService from '../services/BluetoothService';
+import BluetoothService from '../services/bluetoothService';
 
 interface BluetoothState {
   isScanning: boolean;
