@@ -6,13 +6,16 @@ interface InputProps {
   value: string;
   onChangeText: (text: string) => void;
   isDisabled?: boolean;
-  isFullWidth?: boolean;
+  placeholder?: string;
+  style?: object;
 }
 
 export default function PasswordField({
   value,
   onChangeText,
   isDisabled = false,
+  placeholder = "Password",
+  style = {},
 }: InputProps) {
 
   const [isProtected, setIsProtected] = React.useState(true);
@@ -34,6 +37,11 @@ export default function PasswordField({
     height,
     opacity,
     flex: 1,
+    style: {
+      ...style,
+      borderTopLeftRadius: 5,
+      borderBottomLeftRadius: 5,
+    },
   } as const;
 
   const pathData = {
@@ -46,7 +54,7 @@ export default function PasswordField({
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <TextInput
         style={inputStyles}
-        placeholder="Password"
+        placeholder={placeholder}
         value={value}
         onChangeText={onChangeText}
         secureTextEntry={isProtected}

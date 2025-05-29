@@ -10,7 +10,7 @@ import {
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
-export const useTheme = () => {\
+export const useTheme = () => {
 
   const dispatch = useDispatch();
 

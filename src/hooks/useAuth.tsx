@@ -6,15 +6,17 @@ export const useAuth = () => {
 
   const dispatch = useDispatch();
   
-    const { isAuthenticated, user, error, isLoading } = useAppSelector(state => state.auth);
+    const { isAuthenticated, user, error, isLoading, authChecked } = useAppSelector(state => state.auth);
     const [isSigningIn, setIsSigningIn] = useState(false);
     const [isSigningUp, setIsSigningUp] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [isSigningOut, setIsSigningOut] = useState(false);
 
     useEffect(() =>{
-        dispatch(checkAuthState());
-    }, [dispatch]);
+        if(!authChecked && !isLoading) {
+            dispatch(checkAuthState());
+        }
+    }, [dispatch, authChecked, isLoading]);
 
     const signIn = async (username: string, password: string) => {
         setIsSigningIn(true);

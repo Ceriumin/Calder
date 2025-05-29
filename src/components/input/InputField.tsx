@@ -6,6 +6,8 @@ interface InputProps {
   onChangeText: (text: string) => void;
   isDisabled?: boolean;
   isFullWidth?: boolean;
+  keyboardType?: "default" | "email-address" | "number-pad" | "phone-pad" | "numeric";
+  style?: object;
 }
 
 export default function InputField({
@@ -13,6 +15,9 @@ export default function InputField({
   value,
   onChangeText,
   isDisabled = false,
+  isFullWidth = true,
+  keyboardType = "default",
+  style = {},
 }: InputProps) {
 
   const inputStyles = {
@@ -22,6 +27,10 @@ export default function InputField({
     borderRadius: 5,
     padding: 10,
     opacity: isDisabled ? 0.5 : 1,
+    style: {
+      ...style,
+      width: isFullWidth ? "100%" : "auto",
+    }
   } as const;
 
   return (
@@ -31,6 +40,9 @@ export default function InputField({
       value={value}
       onChangeText={onChangeText}
       editable={!isDisabled}
+      selectTextOnFocus={!isDisabled}
+      keyboardType={keyboardType}
+      autoCapitalize="none"
     />
   );
 }

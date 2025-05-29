@@ -14,7 +14,6 @@ interface ThemeState {
   currentTheme: Theme;
 }
 
-// Initialize the theme state
 const initialState: ThemeState = {
   mode: 'light',
   isSystemPreference: true,

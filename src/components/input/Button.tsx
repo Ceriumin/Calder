@@ -11,6 +11,7 @@ interface ButtonProps {
   isLoading?: boolean;
   width?: DimensionValue;
   darkenPercent?: number;
+  style?: object; 
 }
 
 export default function Button({
@@ -22,6 +23,7 @@ export default function Button({
   isLoading = false,
   width = '50%',
   darkenPercent = 10,
+  style = {},
 }: ButtonProps) {
 
   const backgroundColor = 
@@ -47,6 +49,11 @@ export default function Button({
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
+    style: {
+      ...style,
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
   } as const;
 
   const textColor = variation === 'primary' ? 'white' : '#6C757D';

@@ -6,38 +6,43 @@ export interface AuthState {
   error: any | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  authChecked?: boolean;
 }
 
 export const initialState: AuthState = {
   user: null,
   error: null,
-  isLoading: true,
+  isLoading: false,
   isAuthenticated: false,
+  authChecked: false,
 };
   
 
 export const checkAuthState = createAsyncThunk(
   'auth/checkAuthState',
-  async (_, { rejectWithValue }) => { // Placeholder for the thunk API
+  async (_, { rejectWithValue, getState }) => {
+
+    const state = getState() as { auth: AuthState };
+
     try {
       const user = await getCurrentUser();
       const userAttributes = await fetchUserAttributes();
       return { ...user, attributes: userAttributes };
-    } catch (error) {
-      return rejectWithValue(error);
-    } 
+    } catch (error: any) {
+      return rejectWithValue(error?.message || error?.toString() || 'Failed to fetch user');
+    }
   }
-)
+);
 
 export const signUpUser = createAsyncThunk(
   'auth/signUpUser',
-  async (userData: { username: string; password: string}, { rejectWithValue }) => {
+  async (userData: { username: string; password: string }, { rejectWithValue }) => {
     try {
-      const { username, password} = userData;
-      const user = await signUp({ username, password});
+      const { username, password } = userData;
+      const user = await signUp({ username, password });
       return user;
-    } catch (error) {
-      return rejectWithValue(error);
+    } catch (error: any) {
+      return rejectWithValue(error?.message || error?.toString() || 'Failed to sign up');
     }
   }
 );
@@ -49,8 +54,8 @@ export const confirmSignUpUser = createAsyncThunk(
       const { username, code } = confirmationData;
       await confirmSignUp({ username, confirmationCode: code });
       return { success: true };
-    } catch (error) {
-      return rejectWithValue(error);
+    } catch (error: any) {
+      return rejectWithValue(error?.message || error?.toString() || 'Failed to confirm sign up');
     }
   }
 );
@@ -60,11 +65,11 @@ export const signInUser = createAsyncThunk(
   async (credentials: { username: string; password: string }, { rejectWithValue }) => {
     try {
       const { username, password } = credentials;
-      const user = await signIn({ username, password});
+      const user = await signIn({ username, password });
       const userAttributes = await fetchUserAttributes();
       return { ...user, attributes: userAttributes };
-    } catch (error) {
-      return rejectWithValue(error);
+    } catch (error: any) {
+      return rejectWithValue(error?.message || error?.toString() || 'Failed to sign in');
     }
   }
 );
@@ -74,10 +79,11 @@ export const signOutUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await signOut();
-    } catch (error) {
-      return rejectWithValue(error);
+    } catch (error: any) {
+      return rejectWithValue(error?.message || error?.toString() || 'Failed to sign out');
+    }
   }
-})
+);
 
 const authSlice = createSlice({
   name: 'auth',
@@ -85,6 +91,13 @@ const authSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    resetAuthState: (state) => {
+      state.user = null;
+      state.error = null;
+      state.isLoading = false;
+      state.isAuthenticated = false;
+      state.authChecked = false;
     }
   },
   extraReducers: (builder) => {
@@ -94,13 +107,22 @@ const authSlice = createSlice({
       })
       .addCase(checkAuthState.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
+
+        if (action.payload) {
+          state.user = action.payload;
+          state.isAuthenticated = true;
+        } else {
+          state.user = null;
+          state.isAuthenticated = false;
+        }
+        state.authChecked = true;
       })
+
       .addCase(checkAuthState.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
         state.isAuthenticated = false;
+        state.authChecked = true; 
       })
       .addCase(signUpUser.pending, (state) => {
         state.isLoading = true;
@@ -120,7 +142,6 @@ const authSlice = createSlice({
       })
       .addCase(confirmSignUpUser.fulfilled, (state) => {
         state.isLoading = false;
-        state.isAuthenticated = true;
       })
       .addCase(confirmSignUpUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -147,6 +168,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = null;
         state.isAuthenticated = false;
+        state.authChecked = false; 
       })
       .addCase(signOutUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -155,6 +177,6 @@ const authSlice = createSlice({
   }
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, resetAuthState } = authSlice.actions;
 export default authSlice.reducer;
 
