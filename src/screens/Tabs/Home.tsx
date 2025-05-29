@@ -89,14 +89,14 @@ const Home: React.FC = () => {
     },
     statusLabel: {
       fontSize: 16,
-      color: '#3C3C43',
+      color: '#8E8E93',
     },
     statusValue: {
       fontSize: 16,
       fontWeight: '500',
     },
     readingsSection: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor:  currentTheme.colors.card,
       borderRadius: 10,
       padding: 15,
       marginBottom: 20,
@@ -110,7 +110,7 @@ const Home: React.FC = () => {
       flexDirection: 'row',
       alignItems: 'center',
       padding: 15,
-      backgroundColor: '#F2F2F7',
+      backgroundColor:  currentTheme.colors.card,
       borderRadius: 8,
       marginBottom: 10,
     },
@@ -169,7 +169,7 @@ const Home: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>Calder</Text>
+          <Text style={styles.title}>Bluetooth Demo</Text>
           <Text style={styles.subtitle}>ESP32 Temperature & Humidity Monitor</Text>
         </View>
 

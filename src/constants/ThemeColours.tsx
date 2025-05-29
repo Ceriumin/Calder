@@ -15,7 +15,7 @@ export interface AppTheme {
 export const darkTheme: AppTheme = {
   dark: true,
   colors: {
-    primary: '#6200EE',
+    primary: '#007AFF', 
     secondary: '#03DAC6',
     tertiary: '#BB86FC',
     background: '#121212',
@@ -29,7 +29,7 @@ export const darkTheme: AppTheme = {
 export const lightTheme: AppTheme = {
   dark: false,
   colors: {
-    primary: '#ffff',
+    primary: '#007AFF',
     secondary: '#6200EE',
     tertiary: '#03DAC6',
     background: '#F5F5F5',

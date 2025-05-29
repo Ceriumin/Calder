@@ -111,7 +111,6 @@ const authSlice = createSlice({
         if (action.payload) {
           state.user = action.payload;
           state.isAuthenticated = true;
-          // Check if email is verified from user attributes
           state.isEmailVerified = action.payload.attributes?.email_verified === 'true';
         } else {
           state.user = null;
@@ -144,7 +143,7 @@ const authSlice = createSlice({
       })
       .addCase(confirmSignUpUser.fulfilled, (state) => {
         state.isLoading = false;
-        state.isEmailVerified = true; // Set email verified to true on successful confirmation
+        state.isEmailVerified = true; 
       })
       .addCase(confirmSignUpUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -158,6 +157,8 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
+        state.isEmailVerified = action.payload.attributes?.email_verified === 'true';
+        state.authChecked = true;
       })
       .addCase(signInUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -172,6 +173,7 @@ const authSlice = createSlice({
         state.user = null;
         state.isAuthenticated = false;
         state.authChecked = false; 
+        state.isEmailVerified = false;
       })
       .addCase(signOutUser.rejected, (state, action) => {
         state.isLoading = false;

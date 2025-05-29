@@ -49,7 +49,7 @@ export default function Button({
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
-    ...style, // Spread the additional styles
+    ...style, 
     
   } as const;
 
