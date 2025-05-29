@@ -7,6 +7,7 @@ interface InputProps {
   isDisabled?: boolean;
   isFullWidth?: boolean;
   keyboardType?: "default" | "email-address" | "number-pad" | "phone-pad" | "numeric";
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
   style?: object;
 }
 
@@ -18,6 +19,7 @@ export default function InputField({
   isFullWidth = true,
   keyboardType = "default",
   style = {},
+  autoCapitalize = "none",
 }: InputProps) {
 
   const inputStyles = {
@@ -27,10 +29,9 @@ export default function InputField({
     borderRadius: 5,
     padding: 10,
     opacity: isDisabled ? 0.5 : 1,
-    style: {
-      ...style,
-      width: isFullWidth ? "100%" : "auto",
-    }
+    height: 40,
+    width: isFullWidth ? "100%" : "auto",
+    ...style,
   } as const;
 
   return (
@@ -42,7 +43,7 @@ export default function InputField({
       editable={!isDisabled}
       selectTextOnFocus={!isDisabled}
       keyboardType={keyboardType}
-      autoCapitalize="none"
+      autoCapitalize={autoCapitalize}
     />
   );
 }

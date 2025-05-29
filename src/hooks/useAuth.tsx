@@ -6,15 +6,16 @@ export const useAuth = () => {
 
   const dispatch = useDispatch();
   
-    const { isAuthenticated, user, error, isLoading, authChecked } = useAppSelector(state => state.auth);
+    const { isAuthenticated, user, error, isLoading, authChecked, isEmailVerified } = useAppSelector(state => state.auth);
     const [isSigningIn, setIsSigningIn] = useState(false);
     const [isSigningUp, setIsSigningUp] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [isSigningOut, setIsSigningOut] = useState(false);
 
-    useEffect(() =>{
+    useEffect(() => {
+        // Don't check auth during registration flow
         if(!authChecked && !isLoading) {
-            dispatch(checkAuthState());
+        dispatch(checkAuthState());
         }
     }, [dispatch, authChecked, isLoading]);
 
@@ -79,7 +80,8 @@ export const useAuth = () => {
         signUp,
         signOut,
         confirmSignUp,
-        clearErrorState
+        clearErrorState,
+        isEmailVerified,
     }
 }
 

@@ -7,7 +7,6 @@ export function AuthListener() {
   const { authChecked, isLoading } = useAppSelector(state => state.auth);
 
   useEffect(() => {
-    // Check auth status when component mounts, but only if not already checking or checked
     if (!authChecked && !isLoading) {
       dispatch(checkAuthState());
     }

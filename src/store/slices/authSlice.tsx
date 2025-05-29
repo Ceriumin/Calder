@@ -6,6 +6,7 @@ export interface AuthState {
   error: any | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isEmailVerified?: boolean;
   authChecked?: boolean;
 }
 
@@ -13,6 +14,7 @@ export const initialState: AuthState = {
   user: null,
   error: null,
   isLoading: false,
+  isEmailVerified: false,
   isAuthenticated: false,
   authChecked: false,
 };
@@ -20,9 +22,7 @@ export const initialState: AuthState = {
 
 export const checkAuthState = createAsyncThunk(
   'auth/checkAuthState',
-  async (_, { rejectWithValue, getState }) => {
-
-    const state = getState() as { auth: AuthState };
+  async (_, { rejectWithValue }) => {
 
     try {
       const user = await getCurrentUser();
@@ -111,9 +111,12 @@ const authSlice = createSlice({
         if (action.payload) {
           state.user = action.payload;
           state.isAuthenticated = true;
+          // Check if email is verified from user attributes
+          state.isEmailVerified = action.payload.attributes?.email_verified === 'true';
         } else {
           state.user = null;
           state.isAuthenticated = false;
+          state.isEmailVerified = false;
         }
         state.authChecked = true;
       })
@@ -130,7 +133,6 @@ const authSlice = createSlice({
       .addCase(signUpUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
-        state.isAuthenticated = false;
       })
       .addCase(signUpUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -142,6 +144,7 @@ const authSlice = createSlice({
       })
       .addCase(confirmSignUpUser.fulfilled, (state) => {
         state.isLoading = false;
+        state.isEmailVerified = true; // Set email verified to true on successful confirmation
       })
       .addCase(confirmSignUpUser.rejected, (state, action) => {
         state.isLoading = false;

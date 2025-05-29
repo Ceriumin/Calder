@@ -64,6 +64,7 @@ export default function Profile() {
     },
     logoutButton: {
       marginTop: 24,
+      alignSelf: 'center',
     }
   });
 
@@ -107,7 +108,7 @@ export default function Profile() {
       </View>
       
       <Button 
-        onPress={signOut} 
+        onPress={signOut}
         title="Logout" 
         style={styles.logoutButton}
       />

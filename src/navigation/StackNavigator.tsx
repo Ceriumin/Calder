@@ -14,23 +14,9 @@ const RootStack = createNativeStackNavigator();
 
 function AppNavigator() {
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isEmailVerified } = useAuth();
   const { currentTheme, themeMode } = useTheme();
 
-  if (isLoading) {
-    return (
-      <View style={{ 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center',
-        backgroundColor: currentTheme.colors.background 
-      }}>
-        <ActivityIndicator size="large" color={currentTheme.colors.primary} />
-      </View>
-    );
-  }
-
-  // Merge navigation theme with our app theme
   const navigationTheme = {
     ...(themeMode === 'dark' ? DarkTheme : DefaultTheme),
     colors: {
@@ -40,7 +26,7 @@ function AppNavigator() {
   };
 
   return (
-    <React.Fragment>
+    <>
       <AuthListener />
       <NavigationContainer ref={navigationRef} theme={navigationTheme}>
         <RootStack.Navigator 
@@ -49,20 +35,14 @@ function AppNavigator() {
             contentStyle: { backgroundColor: currentTheme.colors.background },
           }}
         >
-          {isAuthenticated ? (
-            <RootStack.Screen 
-              name="Main" 
-              component={TabNavigator}
-              options={{ 
-                gestureEnabled: false 
-              }}
-            />
+          {isAuthenticated && isEmailVerified ? (
+            <RootStack.Screen name="Main" component={TabNavigator} />
           ) : (
             <RootStack.Screen name="Auth" component={AuthNavigation} />
           )}
         </RootStack.Navigator>
       </NavigationContainer>
-    </React.Fragment>              
+    </>              
   );
 }
 

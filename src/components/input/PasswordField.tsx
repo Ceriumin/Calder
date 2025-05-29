@@ -24,7 +24,7 @@ export default function PasswordField({
     setIsProtected(!isProtected);
   };
 
-  const height = 44;
+  const height = 40;
   const backgroundColor = isDisabled ? "#e2e6ea" : "#fff";
   const opacity = isDisabled ? 0.5 : 1;
 
@@ -37,11 +37,8 @@ export default function PasswordField({
     height,
     opacity,
     flex: 1,
-    style: {
-      ...style,
-      borderTopLeftRadius: 5,
-      borderBottomLeftRadius: 5,
-    },
+    borderTopLeftRadius: 5,
+    borderBottomLeftRadius: 5,
   } as const;
 
   const pathData = {
@@ -51,7 +48,7 @@ export default function PasswordField({
   } as const;
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', ...style}}>
       <TextInput
         style={inputStyles}
         placeholder={placeholder}
@@ -70,6 +67,8 @@ export default function PasswordField({
         justifyContent: 'center',
         width: height,
         height,
+        borderTopRightRadius: 5,
+        borderBottomRightRadius: 5,
       }}> 
         <Pressable 
           onPress={togglePasswordVisibility}
@@ -82,6 +81,7 @@ export default function PasswordField({
           <Icon
             size={24}
             pathData={pathData.d}
+            color="lightgrey"
           />
         </Pressable>
       </View>

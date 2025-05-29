@@ -11,7 +11,7 @@ interface ButtonProps {
   isLoading?: boolean;
   width?: DimensionValue;
   darkenPercent?: number;
-  style?: object; 
+  style?: object;
 }
 
 export default function Button({
@@ -49,11 +49,8 @@ export default function Button({
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
-    style: {
-      ...style,
-      flexDirection: 'row',
-      justifyContent: 'center',
-    },
+    ...style, // Spread the additional styles
+    
   } as const;
 
   const textColor = variation === 'primary' ? 'white' : '#6C757D';

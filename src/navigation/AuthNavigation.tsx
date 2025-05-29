@@ -6,7 +6,7 @@ import { useTheme } from '@/hooks/_index';
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
-  ConfirmRegister: undefined;
+  ConfirmRegister:  { email: string };
 };
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
