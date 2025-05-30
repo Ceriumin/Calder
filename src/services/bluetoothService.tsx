@@ -6,7 +6,6 @@ const ESP32_SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 const ENV_CHAR_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a1';
 const ESP32_DEVICE_NAME = 'ESP32-Calder';
 
-// Define interface for environment readings
 interface EnvironmentReading {
   temp: number;
   humidity: number;
@@ -188,7 +187,6 @@ class BluetoothService {
           const dataString = base64.decode(characteristic.value);
           console.log('Received notification data:', dataString);
           try {
-            // Parse the JSON array
             const data = JSON.parse(dataString);
             
             if (Array.isArray(data)) {

@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
 
 interface DividerProps {
   orientation?: 'horizontal' | 'vertical';
@@ -7,6 +8,7 @@ interface DividerProps {
   style?: object;
 }
 
+//TODO: Use the theme colors for the divider
 export default function Divider({
   orientation = 'horizontal',
   color = '#000',

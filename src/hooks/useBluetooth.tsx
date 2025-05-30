@@ -23,6 +23,7 @@ export default function useBluetooth() {
     humidity: null,
   });
 
+  // Partial update function to prevent passing every state property
   const updateState = useCallback((newState: Partial<BluetoothState>) => {
     setState(prevState => ({ ...prevState, ...newState }));
   }, []);
@@ -35,7 +36,6 @@ export default function useBluetooth() {
         updateState({ device, isScanning: false });
       });
       
-      // If the scan completes without finding a device
       setTimeout(() => {
         setState((prevState) => {
           if (prevState.isScanning) {
@@ -96,10 +96,12 @@ export default function useBluetooth() {
     }
   }, [updateState]);
 
-  // Clean up on unmount
+  // Clean up on unmount, which disconnects from the device
   useEffect(() => {
     return () => {
-      BluetoothService.disconnect().catch(console.error);
+      if (state.isConnected) {
+        BluetoothService.disconnect().catch(console.error);
+      }
     };
   }, []);
 

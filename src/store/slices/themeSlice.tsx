@@ -7,7 +7,6 @@ export type Theme = typeof darkTheme | typeof lightTheme;
 
 export { darkTheme, lightTheme };
 
-// Define the state structure
 interface ThemeState {
   mode: ThemeMode;
   isSystemPreference: boolean;

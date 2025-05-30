@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text as RNText, TextProps as RNTextProps } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
 
 interface TextProps extends RNTextProps {
   children: React.ReactNode;
@@ -7,6 +8,7 @@ interface TextProps extends RNTextProps {
   type?: 'primary' | 'secondary' | 'tertiary';
 }
 
+//TODO: Implement useTheme hook to get current theme colors
 export function Text({ children, style, ...rest }: TextProps) {
   return (
     <RNText {...rest} style={[{ fontSize: 16 }, style]}>

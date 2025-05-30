@@ -21,7 +21,7 @@ export const useAuth = () => {
 
     const signIn = async (username: string, password: string) => {
         setIsSigningIn(true);
-        try { // Unwrap allows to handle the result of the thunk action
+        try { 
             await dispatch(signInUser({ username, password })).unwrap();
         } catch (error) {
             console.error('Error signing in:', error);

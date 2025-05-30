@@ -7,32 +7,28 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/_index';
 import TabNavigator from './TabNavigator';
 import AuthNavigation from './AuthNavigation';
-import { View, ActivityIndicator } from 'react-native';
 import { AuthListener } from '@/utils/_index';
 
 const RootStack = createNativeStackNavigator();
 
 function AppNavigator() {
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
-  const { isAuthenticated, isLoading, isEmailVerified } = useAuth();
-  const { currentTheme, themeMode } = useTheme();
+  const { isAuthenticated, isEmailVerified } = useAuth();
+  const { currentTheme } = useTheme();
 
-  const navigationTheme = {
-    ...(themeMode === 'dark' ? DarkTheme : DefaultTheme),
-    colors: {
-      ...(themeMode === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
-      ...currentTheme.colors,
-    },
-  };
-
+  /* isEmailVerified is used to check if the user has verified their email.
+   * This was an issue because it wouldnt redirect the user to verify their email*/
   return (
-    <>
+    <React.Fragment>
       <AuthListener />
-      <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+      <NavigationContainer ref={navigationRef}>
         <RootStack.Navigator 
           screenOptions={{ 
             headerShown: false,
-            contentStyle: { backgroundColor: currentTheme.colors.background },
+            contentStyle: { 
+              backgroundColor: currentTheme.colors.background,
+              borderColor: currentTheme.colors.border,
+            }
           }}
         >
           {isAuthenticated && isEmailVerified ? (
@@ -42,7 +38,7 @@ function AppNavigator() {
           )}
         </RootStack.Navigator>
       </NavigationContainer>
-    </>              
+    </React.Fragment>        
   );
 }
 
